@@ -82,6 +82,18 @@ class SearchTests(unittest.TestCase):
         self.assertEqual(len(scan([self.source], Filters(before="2001-01-01")).files), 1)
         self.assertEqual(len(scan([self.source], Filters(after="2001-01-01")).files), 0)
 
+    def test_new_destination_subtree_is_not_collected(self):
+        self.put("output/nested/a.pdf")
+        (self.source / "output").mkdir(exist_ok=True)
+        files = scan([self.source], Filters()).files
+        self.assertTrue(make_plan(files, self.source / "output")[0].skip)
+
+    def test_depth_with_overlapping_roots_is_independent_of_order(self):
+        self.put("one/two/three/a.pdf")
+        for roots in ([self.source, self.source / "one/two"], [self.source / "one/two", self.source]):
+            result = scan(roots, Filters(max_depth=1))
+            self.assertEqual(len(result.files), 1)
+
 
 if __name__ == "__main__":
     unittest.main()

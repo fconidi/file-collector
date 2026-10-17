@@ -65,7 +65,7 @@ def scan(roots, filters, destination=None, cancel=None):
     """Scan without following links; a depth of zero scans root files only."""
     cancel = cancel or threading.Event()
     result = SearchResult()
-    visited = set()
+    visited = {}
     destination = Path(destination).resolve() if destination else None
     extensions = {ext.lstrip("*.") for ext in _parts(filters.extensions)}
     excluded = _parts(filters.excluded)
@@ -82,9 +82,9 @@ def scan(roots, filters, destination=None, cancel=None):
         directory, depth = stack.pop()
         if directory == destination or (destination and destination in directory.parents):
             continue
-        if directory in visited:
+        if directory in visited and visited[directory] <= depth:
             continue
-        visited.add(directory)
+        visited[directory] = depth
         try:
             with os.scandir(directory) as entries:
                 for entry in entries:
@@ -118,7 +118,8 @@ def scan(roots, filters, destination=None, cancel=None):
                         result.errors.append(f"{path}: {error}")
         except OSError as error:
             result.errors.append(f"{directory}: {error}")
-    result.files.sort(key=lambda file: (file.path.name.casefold(), str(file.path)))
+    result.files = sorted({file.path: file for file in result.files}.values(),
+                          key=lambda file: (file.path.name.casefold(), str(file.path)))
     result.cancelled = cancel.is_set()
     return result
 
@@ -141,7 +142,7 @@ def make_plan(files, destination, conflicts="rename"):
     plan = []
     for file in files:
         target = destination / file.path.name
-        if file.path.parent == destination:
+        if destination in file.path.parents:
             plan.append(PlanItem(file, target, skip=True))
             continue
         conflict = target.name.casefold() in occupied

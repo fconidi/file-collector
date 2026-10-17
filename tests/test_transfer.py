@@ -5,7 +5,7 @@ import unittest
 from unittest.mock import patch
 
 from file_collector.core import File, PlanItem, Filters, scan, make_plan
-from file_collector.transfer import collect, history, restore
+from file_collector.transfer import collect, history, restore, _digest, _rename_noreplace, _copy_verified
 
 
 class TransferTests(unittest.TestCase):
@@ -106,6 +106,46 @@ class TransferTests(unittest.TestCase):
         result = collect([skipped], self.journal)
         self.assertEqual(result.skipped, 1)
         self.assertTrue(plan[0].file.path.exists())
+
+    def test_cancel_during_copy_cleans_staging_and_preserves_source(self):
+        plan = self.plan()
+        cancel = threading.Event()
+        digest = _digest(plan[0].file, cancel)
+        cancel.set()
+        with self.assertRaises(InterruptedError):
+            _copy_verified(plan[0].file, plan[0].target, digest, cancel)
+        self.assertTrue(plan[0].file.path.exists())
+        self.assertEqual(list(self.dest.iterdir()), [])
+
+    def test_corrupt_copy_is_not_published(self):
+        plan = self.plan()
+        cancel = threading.Event()
+        with self.assertRaises(ValueError):
+            _copy_verified(plan[0].file, plan[0].target, 'incorrect digest', cancel)
+        self.assertTrue(plan[0].file.path.exists())
+        self.assertEqual(list(self.dest.iterdir()), [])
+
+    def test_pending_move_after_journal_update_failure_can_be_restored(self):
+        plan = self.plan()
+        def moved_then_interrupted(source, target):
+            _rename_noreplace(source, target)
+            raise OSError(5, 'Interrupted after publication')
+        with patch('file_collector.transfer._rename', side_effect=moved_then_interrupted):
+            result = collect(plan, self.journal)
+        self.assertEqual(len(result.errors), 1)
+        self.assertEqual(restore(result.run_id, self.journal).moved, 1)
+        self.assertTrue(plan[0].file.path.exists())
+
+    def test_destination_symlink_substitution_is_rejected(self):
+        plan = self.plan()
+        elsewhere = self.root / 'elsewhere'
+        elsewhere.mkdir()
+        self.dest.rmdir()
+        self.dest.symlink_to(elsewhere, target_is_directory=True)
+        result = collect(plan, self.journal)
+        self.assertEqual(len(result.errors), 1)
+        self.assertTrue(plan[0].file.path.exists())
+        self.assertEqual(list(elsewhere.iterdir()), [])
 
 
 if __name__ == "__main__":
