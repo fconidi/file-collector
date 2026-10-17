@@ -1,0 +1,19 @@
+[Desktop Entry]
+Type=Application
+Name=File Collector
+GenericName=File collection tool
+GenericName[it]=Raccolta di file
+GenericName[fr]=Regroupement de fichiers
+GenericName[de]=Dateisammlung
+GenericName[es]=Recopilación de archivos
+Comment=Find files in subfolders and gather them in one destination
+Comment[it]=Cerca file nelle sottocartelle e riuniscili in una destinazione
+Comment[fr]=Rechercher des fichiers et les regrouper dans un dossier
+Comment[de]=Dateien in Unterordnern suchen und in einem Ziel sammeln
+Comment[es]=Busca archivos en subcarpetas y reúnelos en un destino
+Exec=file-collector
+Icon=org.syslinuxos.FileCollector
+Terminal=false
+Categories=Utility;FileTools;
+Keywords=files;folders;collect;move;search;comics;
+StartupNotify=true
