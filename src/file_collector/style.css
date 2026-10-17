@@ -43,6 +43,7 @@ window.collector { background: #f1f4f9; color: #192b45; font-family: "Noto Sans"
 .collector.dark .origin-list row { background: transparent; }
 .collector.dark .origin-list row:selected { background: #3c5c87; }
 .collector.dark arrow { color: #bdcce0; }
+.collector.dark combobox cellview { color: #edf3fb; }
 .collector.dark treeview { background: #222f42; color: #edf3fb; }
 .collector.dark treeview:selected { background: #3c5c87; color: #fff; }
 .collector.dark treeview header button, .collector.dark .origin-list { background: #2b3b52; color: #dbe7fa; }
