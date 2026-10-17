@@ -1,0 +1,49 @@
+window.collector { background: #f1f4f9; color: #192b45; font-family: "Noto Sans", "DejaVu Sans", sans-serif; font-size: 10pt; }
+.collector .masthead { background: #fff; border-bottom: 1px solid #d7e0ed; padding: 18px 24px; }
+.collector .brand { font-size: 22pt; font-weight: 700; color: #163e7a; }
+.collector .subtitle, .collector .muted { color: #536680; }
+.collector .sidebar { background: #e7edf6; padding: 20px; border-right: 1px solid #d1dceb; }
+.collector .section-title { font-size: 12pt; font-weight: 700; }
+.collector .field-label { font-size: 9pt; font-weight: 600; color: #455b77; }
+.collector .workspace { padding: 18px 22px 0; }
+.collector .results { background: #fff; border: 1px solid #d5dfec; border-radius: 10px; }
+.collector treeview { background: #fff; color: #192b45; padding: 5px; }
+.collector treeview:selected { background: #dbe8ff; color: #153d82; }
+.collector treeview header button { background: #f3f6fb; color: #455b77; border: 0; border-bottom: 1px solid #d5dfec; border-radius: 0; padding: 10px 8px; font-weight: 600; }
+.collector button { background: #fff; background-image: none; color: #223d60; border: 1px solid #c5d2e4; border-radius: 7px; padding: 8px 12px; box-shadow: none; text-shadow: none; }
+.collector button:hover { background: #edf3fd; border-color: #7496c5; }
+.collector button:focus { outline: 2px solid #2a64bb; outline-offset: 2px; }
+.collector button.primary { background: #205ab0; color: #fff; border-color: #205ab0; font-weight: 700; padding: 11px 20px; }
+.collector button.primary:hover { background: #174a96; }
+.collector button:disabled { opacity: 0.5; }
+.collector entry, .collector spinbutton, .collector combobox button { background: #fff; color: #192b45; border: 1px solid #b8c9df; border-radius: 6px; min-height: 27px; box-shadow: none; }
+.collector entry:focus { border-color: #205ab0; }
+.collector .origin-list { background: #f7f9fd; border-radius: 6px; }
+.collector .origin-list row { padding: 4px; }
+.collector .empty-title { font-size: 18pt; font-weight: 700; color: #224d87; }
+.collector .destination { background: #fff; padding: 16px 22px; border-top: 1px solid #d7e0ed; }
+.collector .statusbar { padding: 10px 22px; background: #e7edf6; }
+.collector .badge { background: #eaf1fc; color: #174a96; padding: 6px 12px; border-radius: 15px; font-weight: 600; }
+.collector .warning { color: #885006; }
+.collector progressbar trough { min-height: 5px; background: #d2deef; border: 0; }
+.collector progressbar progress { min-height: 5px; background: #205ab0; border: 0; }
+.collector scrollbar { background: #e7edf6; }
+.collector scrollbar slider { min-width: 9px; min-height: 25px; background: #a7b9ce; border: 3px solid #e7edf6; border-radius: 8px; }
+.collector scrollbar button { padding: 0; min-width: 0; min-height: 0; border: 0; border-radius: 0; background: transparent; }
+.collector.dark { background: #1a2433; color: #edf3fb; }
+.collector.dark label { color: #edf3fb; }
+.collector.dark .masthead, .collector.dark .destination, .collector.dark .results { background: #222f42; border-color: #3c4e67; }
+.collector.dark .brand, .collector.dark .empty-title { color: #b8d4ff; }
+.collector.dark .sidebar, .collector.dark .statusbar { background: #1c293b; border-color: #3c4e67; }
+.collector.dark .muted, .collector.dark .subtitle, .collector.dark .field-label { color: #bdcce0; }
+.collector.dark entry, .collector.dark spinbutton, .collector.dark button, .collector.dark combobox button { background: #2c3c53; color: #edf3fb; border-color: #637996; }
+.collector.dark button:hover { background: #3b5272; }
+.collector.dark button.primary { background: #8ebcff; color: #10243e; border-color: #8ebcff; }
+.collector.dark button.primary label { color: #10243e; }
+.collector.dark .origin-list row { background: transparent; }
+.collector.dark .origin-list row:selected { background: #3c5c87; }
+.collector.dark arrow { color: #bdcce0; }
+.collector.dark treeview { background: #222f42; color: #edf3fb; }
+.collector.dark treeview:selected { background: #3c5c87; color: #fff; }
+.collector.dark treeview header button, .collector.dark .origin-list { background: #2b3b52; color: #dbe7fa; }
+.collector.dark .badge { background: #364e71; color: #e1edff; }
