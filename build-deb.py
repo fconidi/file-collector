@@ -7,6 +7,13 @@ import shutil
 import subprocess
 import tempfile
 
+import gi
+
+gi.require_version("GdkPixbuf", "2.0")
+from gi.repository import GdkPixbuf
+
+ICON_SIZES = (16, 24, 32, 48, 64, 128, 256)
+
 
 def main():
     parser = argparse.ArgumentParser(description="Build File Collector for Debian")
@@ -23,7 +30,7 @@ def main():
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(origin, target)
             target.chmod(0o755 if executable else 0o644)
-        for name in ("__init__.py", "core.py", "transfer.py", "i18n.py", "app.py", "icon.svg", "style.css"):
+        for name in ("__init__.py", "core.py", "transfer.py", "i18n.py", "app.py", "icon.svg", "icon-small.svg", "style.css"):
             install(modules / name, f"usr/share/file-collector/file_collector/{name}")
         install(source / "packaging/file-collector", "usr/bin/file-collector", True)
         install(source / "packaging/org.syslinuxos.FileCollector.desktop", "usr/share/applications/org.syslinuxos.FileCollector.desktop")
@@ -31,6 +38,12 @@ def main():
         for name in ("README.md", "CHANGELOG.md", "LICENSE"):
             install(source / name, f"usr/share/doc/file-collector/{name}")
         install(modules / "icon.svg", "usr/share/doc/file-collector/src/file_collector/icon.svg")
+        for size in ICON_SIZES:
+            artwork = modules / ("icon-small.svg" if size <= 32 else "icon.svg")
+            target = root / f"usr/share/icons/hicolor/{size}x{size}/apps/org.syslinuxos.FileCollector.png"
+            target.parent.mkdir(parents=True, exist_ok=True)
+            GdkPixbuf.Pixbuf.new_from_file_at_scale(str(artwork), size, size, True).savev(str(target), "png", [], [])
+            target.chmod(0o644)
         control = root / "DEBIAN"
         control.mkdir()
         (control / "control").write_text(

@@ -36,7 +36,7 @@ Cancellation preserves completed moves and stops further work; the history can r
 On Debian and compatible distributions:
 
 ```sh
-sudo apt install ./file-collector_0.1.0_all.deb
+sudo apt install ./file-collector_0.2.0_all.deb
 ```
 
 Open **File Collector** from the applications menu or run `file-collector`.

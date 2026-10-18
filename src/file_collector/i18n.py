@@ -48,6 +48,8 @@ CATALOG = {
     "Name conflicts": ("Nomi duplicati", "Noms en conflit", "Namenskonflikte", "Nombres duplicados"),
     "Keep both (add suffix)": ("Conserva entrambi (aggiungi suffisso)", "Conserver les deux (ajouter un suffixe)", "Beide behalten (Suffix anhängen)", "Conservar ambos (añadir sufijo)"),
     "Skip existing names": ("Salta i nomi esistenti", "Ignorer les noms existants", "Vorhandene Namen überspringen", "Omitir nombres existentes"),
+    "Settings": ("Impostazioni", "Paramètres", "Einstellungen", "Ajustes"),
+    "Preview and move": ("Anteprima e sposta", "Aperçu et déplacement", "Prüfen und verschieben", "Vista previa y mover"),
     "Preview collection": ("Anteprima raccolta", "Aperçu du regroupement", "Sammlung prüfen", "Vista previa"),
     "Ready": ("Pronto", "Prêt", "Bereit", "Listo"),
     "Cancel": ("Annulla", "Annuler", "Abbrechen", "Cancelar"),

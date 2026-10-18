@@ -1,50 +1,405 @@
-window.collector { background: #f1f4f9; color: #192b45; font-family: "Noto Sans", "DejaVu Sans", sans-serif; font-size: 10pt; }
-.collector .masthead { background: #fff; border-bottom: 1px solid #d7e0ed; padding: 18px 24px; }
-.collector .brand { font-size: 22pt; font-weight: 700; color: #163e7a; }
-.collector .subtitle, .collector .muted { color: #536680; }
-.collector .sidebar { background: #e7edf6; padding: 20px; border-right: 1px solid #d1dceb; }
-.collector .section-title { font-size: 12pt; font-weight: 700; }
-.collector .field-label { font-size: 9pt; font-weight: 600; color: #455b77; }
-.collector .workspace { padding: 18px 22px 0; }
-.collector .results { background: #fff; border: 1px solid #d5dfec; border-radius: 10px; }
-.collector treeview { background: #fff; color: #192b45; padding: 5px; }
-.collector treeview:selected { background: #dbe8ff; color: #153d82; }
-.collector treeview header button { background: #f3f6fb; color: #455b77; border: 0; border-bottom: 1px solid #d5dfec; border-radius: 0; padding: 10px 8px; font-weight: 600; }
-.collector button { background: #fff; background-image: none; color: #223d60; border: 1px solid #c5d2e4; border-radius: 7px; padding: 8px 12px; box-shadow: none; text-shadow: none; }
-.collector button:hover { background: #edf3fd; border-color: #7496c5; }
-.collector button:focus { outline: 2px solid #2a64bb; outline-offset: 2px; }
-.collector button.primary { background: #205ab0; color: #fff; border-color: #205ab0; font-weight: 700; padding: 11px 20px; }
-.collector button.primary:hover { background: #174a96; }
-.collector button:disabled { opacity: 0.5; }
-.collector entry, .collector spinbutton, .collector combobox button { background: #fff; color: #192b45; border: 1px solid #b8c9df; border-radius: 6px; min-height: 27px; box-shadow: none; }
-.collector entry:focus { border-color: #205ab0; }
-.collector .origin-list { background: #f7f9fd; border-radius: 6px; }
-.collector .origin-list row { padding: 4px; }
-.collector .empty-title { font-size: 18pt; font-weight: 700; color: #224d87; }
-.collector .destination { background: #fff; padding: 16px 22px; border-top: 1px solid #d7e0ed; }
-.collector .statusbar { padding: 10px 22px; background: #e7edf6; }
-.collector .badge { background: #eaf1fc; color: #174a96; padding: 6px 12px; border-radius: 15px; font-weight: 600; }
-.collector .warning { color: #885006; }
-.collector progressbar trough { min-height: 5px; background: #d2deef; border: 0; }
-.collector progressbar progress { min-height: 5px; background: #205ab0; border: 0; }
-.collector scrollbar { background: #e7edf6; }
-.collector scrollbar slider { min-width: 9px; min-height: 25px; background: #a7b9ce; border: 3px solid #e7edf6; border-radius: 8px; }
-.collector scrollbar button { padding: 0; min-width: 0; min-height: 0; border: 0; border-radius: 0; background: transparent; }
-.collector.dark { background: #1a2433; color: #edf3fb; }
-.collector.dark label { color: #edf3fb; }
-.collector.dark .masthead, .collector.dark .destination, .collector.dark .results { background: #222f42; border-color: #3c4e67; }
-.collector.dark .brand, .collector.dark .empty-title { color: #b8d4ff; }
-.collector.dark .sidebar, .collector.dark .statusbar { background: #1c293b; border-color: #3c4e67; }
-.collector.dark .muted, .collector.dark .subtitle, .collector.dark .field-label { color: #bdcce0; }
-.collector.dark entry, .collector.dark spinbutton, .collector.dark button, .collector.dark combobox button { background: #2c3c53; color: #edf3fb; border-color: #637996; }
-.collector.dark button:hover { background: #3b5272; }
-.collector.dark button.primary { background: #8ebcff; color: #10243e; border-color: #8ebcff; }
-.collector.dark button.primary label { color: #10243e; }
-.collector.dark .origin-list row { background: transparent; }
-.collector.dark .origin-list row:selected { background: #3c5c87; }
-.collector.dark arrow { color: #bdcce0; }
-.collector.dark combobox cellview { color: #edf3fb; }
-.collector.dark treeview { background: #222f42; color: #edf3fb; }
-.collector.dark treeview:selected { background: #3c5c87; color: #fff; }
-.collector.dark treeview header button, .collector.dark .origin-list { background: #2b3b52; color: #dbe7fa; }
-.collector.dark .badge { background: #364e71; color: #e1edff; }
+@define-color fc_ink #242735;
+@define-color fc_muted #596174;
+@define-color fc_line #d9dce6;
+@define-color fc_indigo #4e38c4;
+@define-color fc_amber #ffc857;
+@define-color fc_dark_ink #eef0f8;
+@define-color fc_dark_muted #b1b7cb;
+@define-color fc_dark_line #3d4255;
+
+.collector.background {
+    background-color: #f5f6fa;
+    color: @fc_ink;
+    font-family: "Noto Sans", "DejaVu Sans", sans-serif;
+    font-size: 10pt;
+}
+.collector label { color: @fc_ink; text-shadow: none; }
+.collector label:disabled { color: #5f6575; }
+.collector button label, .collector row label, .collector menuitem label { color: inherit; }
+.collector button image { color: inherit; -gtk-icon-style: symbolic; -gtk-icon-shadow: none; }
+.collector .masthead {
+    background-color: #ffffff;
+    border-bottom: 1px solid @fc_line;
+    padding: 14px 22px;
+}
+.collector .brand { font-size: 18pt; font-weight: 700; color: #29243f; }
+.collector .subtitle, .collector .muted { color: @fc_muted; }
+.collector .section-title { font-size: 11pt; font-weight: 700; color: @fc_ink; }
+.collector .field-label { font-size: 9pt; font-weight: 500; color: @fc_muted; }
+.collector .sidebar {
+    background-color: #eef0f6;
+    border-right: 1px solid @fc_line;
+    padding: 20px 18px 24px;
+}
+.collector .workspace { padding: 16px 20px 0; }
+.collector .results {
+    background-color: #ffffff;
+    border: 1px solid @fc_line;
+    border-radius: 8px;
+}
+.collector .empty-title { font-size: 18pt; font-weight: 700; color: #353047; }
+.collector .badge {
+    background-color: #eae6fb;
+    color: #4832aa;
+    border-radius: 12px;
+    padding: 4px 10px;
+    font-size: 9pt;
+    font-weight: 700;
+}
+.collector .destination {
+    background-color: #ffffff;
+    border-top: 1px solid @fc_line;
+    padding: 16px 20px;
+}
+.collector .statusbar { background-color: #eef0f6; padding: 6px 22px; font-size: 9pt; }
+.collector .warning { color: #51446f; }
+
+.collector button {
+    background-color: #ffffff;
+    background-image: none;
+    border-image: none;
+    color: #343749;
+    border: 1px solid #bec3d1;
+    border-radius: 6px;
+    min-height: 20px;
+    padding: 8px 12px;
+    box-shadow: none;
+    text-shadow: none;
+    -gtk-icon-shadow: none;
+}
+.collector button:hover { background-color: #f0edf9; border-color: #9d93c8; }
+.collector button:active, .collector button:checked { background-color: #e5dff7; border-color: #7d6ab9; }
+.collector button.flat { background-color: transparent; border-color: transparent; color: #51446f; }
+.collector button.flat:hover { background-color: #e6e2f3; border-color: #c7bfdc; }
+.collector button.flat:active, .collector button.flat:checked { background-color: #dcd5f1; border-color: #a99acb; }
+.collector button.outlined { background-color: #ffffff; border-color: #b9b3cf; color: #483984; }
+.collector button.outlined:hover { background-color: #f0edf9; border-color: #8979ba; }
+.collector button.primary {
+    background-color: @fc_indigo;
+    border-color: @fc_indigo;
+    color: #ffffff;
+    font-weight: 700;
+    padding: 10px 16px;
+}
+.collector button.primary:hover { background-color: #5c44d4; border-color: #5c44d4; }
+.collector button.primary:active { background-color: #3e2ba4; border-color: #3e2ba4; }
+.collector button.accent {
+    background-color: @fc_amber;
+    border-color: #e5ad35;
+    color: #392b0d;
+    font-weight: 700;
+    padding: 10px 16px;
+}
+.collector button.accent:hover { background-color: #ffd67c; border-color: #d59b22; }
+.collector button.accent:active { background-color: #efb53b; border-color: #c78d16; }
+.collector button:disabled, .collector button.flat:disabled,
+.collector button.outlined:disabled, .collector button.primary:disabled, .collector button.accent:disabled {
+    background-color: #e4e6ed;
+    border-color: #d5d8e2;
+    color: #5f6575;
+    box-shadow: none;
+}
+.collector button.flat:disabled { background-color: transparent; border-color: transparent; }
+.collector button:focus, .collector entry:focus, .collector spinbutton:focus,
+.collector combobox:focus button, .collector expander:focus, .collector row:focus,
+.collector checkbutton:focus, .collector treeview:focus {
+    outline: 2px solid @fc_indigo;
+    outline-offset: -3px;
+    -gtk-outline-radius: 4px;
+}
+.collector button.primary:focus { outline-color: #ffffff; }
+.collector button.accent:focus { outline-color: #503486; }
+.collector entry, .collector spinbutton {
+    background-color: #ffffff;
+    background-image: none;
+    color: @fc_ink;
+    caret-color: @fc_indigo;
+    border-image: none;
+    text-shadow: none;
+    border: 1px solid #bec3d1;
+    border-radius: 6px;
+    min-height: 20px;
+    padding: 8px 10px;
+    box-shadow: none;
+}
+.collector entry:focus, .collector spinbutton:focus { border-color: @fc_indigo; }
+.collector entry selection, .collector textview text selection { background-color: @fc_indigo; background-image: none; color: #ffffff; }
+.collector entry:disabled, .collector spinbutton:disabled { background-color: #e4e6ed; color: #5f6575; border-color: #d5d8e2; }
+.collector entry placeholder { color: #687083; }
+.collector spinbutton button { border: 0; border-radius: 3px; padding: 2px 6px; min-height: 16px; }
+.collector combobox button { background-color: #ffffff; color: @fc_ink; border-color: #bec3d1; }
+.collector combobox cellview { color: inherit; }
+.collector combobox arrow { color: #596174; min-width: 12px; min-height: 12px; }
+.collector combobox button:disabled { background-color: #e4e6ed; color: #5f6575; }
+
+.collector list, .collector .origin-list { background-color: #ffffff; background-image: none; border-image: none; color: @fc_ink; }
+.collector .origin-list { border: 1px solid @fc_line; border-radius: 6px; padding: 3px; }
+.collector row {
+    background-color: transparent;
+    background-image: none;
+    color: @fc_ink;
+    border: 0;
+    border-image: none;
+    box-shadow: none;
+    text-shadow: none;
+    padding: 7px 9px;
+    border-radius: 4px;
+}
+.collector row:hover { background-color: #f1eff8; }
+.collector row:selected { background-color: #e7e1fa; color: #3c298b; }
+.collector treeview {
+    background-color: #ffffff;
+    background-image: none;
+    color: @fc_ink;
+    padding: 2px 0;
+    border-radius: 6px;
+    -GtkTreeView-horizontal-separator: 6;
+    -GtkTreeView-vertical-separator: 4;
+    -GtkTreeView-grid-line-width: 0;
+}
+.collector treeview:disabled { color: #5f6575; }
+.collector treeview:hover { background-color: #f5f3fc; }
+.collector treeview:selected { background-color: #e7e1fa; color: #34237b; }
+.collector treeview header button {
+    background-color: #f5f6fa;
+    color: #535b70;
+    border: 0;
+    border-bottom: 1px solid @fc_line;
+    border-radius: 0;
+    padding: 9px 6px;
+    min-height: 20px;
+    font-size: 9pt;
+    font-weight: 600;
+}
+.collector treeview header button:hover { background-color: #ebe7f7; color: #4832aa; }
+.collector check, .collector treeview check {
+    background-color: #ffffff;
+    background-image: none;
+    border-image: none;
+    -gtk-icon-source: none;
+    -gtk-icon-style: symbolic;
+    color: #ffffff;
+    border: 1px solid #8990a3;
+    border-radius: 3px;
+    min-width: 14px;
+    min-height: 14px;
+    box-shadow: none;
+    -gtk-icon-shadow: none;
+}
+.collector check:checked, .collector check:indeterminate,
+.collector treeview check:checked, .collector treeview check:indeterminate {
+    background-color: @fc_indigo;
+    border-color: @fc_indigo;
+    color: #ffffff;
+}
+.collector check:checked, .collector treeview check:checked { -gtk-icon-source: -gtk-icontheme("object-select-symbolic"); }
+.collector check:indeterminate, .collector treeview check:indeterminate { -gtk-icon-source: -gtk-icontheme("list-remove-symbolic"); }
+.collector check:disabled, .collector treeview check:disabled { background-color: #e4e6ed; border-color: #c3c7d3; color: #5f6575; }
+.collector expander title { padding: 2px 0; color: #51446f; }
+.collector expander arrow { color: #65578c; min-width: 14px; min-height: 14px; }
+.collector expander title:hover { color: @fc_indigo; }
+.collector separator { background-color: @fc_line; min-width: 1px; min-height: 1px; }
+.collector popover, .collector menu {
+    background-color: #ffffff;
+    background-image: none;
+    color: @fc_ink;
+    border: 1px solid @fc_line;
+    border-radius: 8px;
+    box-shadow: 0 4px 16px alpha(#242735, 0.14);
+    padding: 4px;
+}
+.collector menuitem { padding: 8px 10px; color: @fc_ink; }
+.collector menuitem:hover { background-color: #e7e1fa; color: #34237b; }
+.collector progressbar { padding: 0; }
+.collector progressbar trough { min-height: 3px; background-color: #e3e0ef; border: 0; border-radius: 0; }
+.collector progressbar progress { min-height: 3px; background-color: @fc_indigo; background-image: none; border: 0; border-radius: 0; }
+.collector scrollbar, .collector scrollbar trough {
+    background-color: transparent;
+    background-image: none;
+    border: 0;
+    border-image: none;
+    box-shadow: none;
+    padding: 0;
+    margin: 0;
+    opacity: 1;
+    -GtkScrollbar-has-backward-stepper: false;
+    -GtkScrollbar-has-forward-stepper: false;
+    -GtkScrollbar-has-secondary-backward-stepper: false;
+    -GtkScrollbar-has-secondary-forward-stepper: false;
+}
+.collector scrollbar.vertical { min-width: 8px; }
+.collector scrollbar.horizontal { min-height: 8px; }
+.collector scrollbar slider {
+    background-color: #858c9e;
+    background-image: none;
+    background-clip: padding-box;
+    border: 1px solid transparent;
+    border-image: none;
+    border-radius: 8px;
+    box-shadow: none;
+    min-width: 6px;
+    min-height: 32px;
+    padding: 0;
+    margin: 0;
+}
+.collector scrollbar.horizontal slider { min-width: 32px; min-height: 6px; }
+.collector scrollbar slider:hover { background-color: #70618c; }
+.collector scrollbar slider:active { background-color: @fc_indigo; }
+.collector scrollbar button, .collector scrollbar button:hover, .collector scrollbar button:active,
+.collector scrollbar button:disabled, .collector.dark scrollbar button, .collector.dark scrollbar button:hover,
+.collector.dark scrollbar button:active, .collector.dark scrollbar button:disabled {
+    min-width: 0;
+    min-height: 0;
+    padding: 0;
+    margin: 0;
+    border: 0;
+    border-image: none;
+    background: transparent;
+    box-shadow: none;
+    -gtk-icon-source: none;
+}
+.collector scrolledwindow, .collector viewport {
+    border: 0;
+    border-image: none;
+    box-shadow: none;
+    background-image: none;
+}
+.collector scrolledwindow junction { background-color: #f5f6fa; background-image: none; }
+.collector .sidebar-scroll, .collector .sidebar-scroll > viewport { background-color: #eef0f6; }
+.collector .sidebar-scroll undershoot.top, .collector .sidebar-scroll undershoot.bottom {
+    background-color: transparent;
+    background-image: none;
+    border: 0;
+    min-height: 2px;
+}
+.collector .sidebar-scroll undershoot.top { box-shadow: inset 0 2px alpha(#4e38c4, 0.22); }
+.collector .sidebar-scroll undershoot.bottom { box-shadow: inset 0 -2px alpha(#4e38c4, 0.22); }
+.collector scrolledwindow.dialog-surface {
+    background-color: #ffffff;
+    border: 1px solid @fc_line;
+    border-image: none;
+    border-radius: 8px;
+    padding: 6px;
+    box-shadow: none;
+}
+.collector .dialog-surface > viewport, .collector .dialog-surface list { background-color: #ffffff; }
+.collector textview, .collector textview text {
+    background-color: #ffffff;
+    background-image: none;
+    color: @fc_ink;
+    font-family: "Noto Sans", "DejaVu Sans", sans-serif;
+    text-shadow: none;
+    border: 0;
+    border-image: none;
+    box-shadow: none;
+    padding: 0;
+}
+.collector textview:focus { outline: 2px solid @fc_indigo; outline-offset: -2px; }
+.collector label selection { background-color: @fc_indigo; background-image: none; color: #ffffff; }
+.collector .dialog-action-area { padding: 12px 18px; border-top: 1px solid @fc_line; }
+messagedialog.collector .title { font-size: 14pt; font-weight: 700; }
+.collector .statusbar button { padding: 2px 8px; min-height: 18px; }
+
+.collector.dark.background { background-color: #20222d; color: @fc_dark_ink; }
+.collector.dark label, .collector.dark .section-title { color: @fc_dark_ink; }
+.collector.dark label:disabled { color: #a0a7bb; }
+.collector.dark button label, .collector.dark row label, .collector.dark menuitem label { color: inherit; }
+.collector.dark button image { color: inherit; -gtk-icon-style: symbolic; -gtk-icon-shadow: none; }
+.collector.dark .masthead button image { color: #ded4fa; }
+.collector.dark .masthead button:disabled image { color: #a0a7bb; }
+.collector.dark .masthead, .collector.dark .destination { background-color: #282b38; border-color: @fc_dark_line; }
+.collector.dark .brand, .collector.dark .empty-title { color: #f0edf9; }
+.collector.dark .sidebar, .collector.dark .statusbar { background-color: #242733; border-color: @fc_dark_line; }
+.collector.dark .results { background-color: #282b38; border-color: @fc_dark_line; }
+.collector.dark .muted, .collector.dark .subtitle, .collector.dark .field-label { color: @fc_dark_muted; }
+.collector.dark .badge { background-color: #40365f; color: #ddd3ff; }
+.collector.dark .warning { color: #ddd3ff; }
+.collector.dark button { background-color: #343847; color: #e4e7f2; border-color: #62697f; }
+.collector.dark button:hover { background-color: #45405a; border-color: #9988c2; }
+.collector.dark button:active, .collector.dark button:checked { background-color: #514467; border-color: #ad99de; }
+.collector.dark button.flat { background-color: transparent; border-color: transparent; color: #cec3ef; }
+.collector.dark button.flat:hover { background-color: #3b354d; border-color: #706184; }
+.collector.dark button.flat:active, .collector.dark button.flat:checked { background-color: #493d60; border-color: #9e89c6; }
+.collector.dark button.outlined { background-color: #2e2b3e; background-image: none; border-color: #9184b2; color: #eee6ff; }
+.collector.dark button.outlined:hover { background-color: #3b354d; border-color: #ad99de; }
+.collector.dark button.outlined:active { background-color: #493d60; border-color: #c6b3ff; }
+.collector.dark button.primary { background-color: #b5a1ff; border-color: #b5a1ff; color: #251847; }
+.collector.dark button.primary:hover { background-color: #c6b7ff; border-color: #c6b7ff; }
+.collector.dark button.primary:active { background-color: #a28be9; border-color: #a28be9; }
+.collector.dark button.accent { background-color: @fc_amber; border-color: @fc_amber; color: #392b0d; }
+.collector.dark button.accent:hover { background-color: #ffd67c; border-color: #ffd67c; }
+.collector.dark button.accent:active { background-color: #efb53b; border-color: #efb53b; }
+.collector.dark button:disabled, .collector.dark button.flat:disabled,
+.collector.dark button.outlined:disabled, .collector.dark button.primary:disabled, .collector.dark button.accent:disabled {
+    background-color: #323542;
+    border-color: #424756;
+    color: #a0a7bb;
+}
+.collector.dark button.flat:disabled { background-color: transparent; border-color: transparent; }
+.collector.dark button:focus, .collector.dark entry:focus, .collector.dark spinbutton:focus,
+.collector.dark combobox:focus button, .collector.dark expander:focus, .collector.dark row:focus,
+.collector.dark checkbutton:focus, .collector.dark treeview:focus { outline-color: #c6b3ff; }
+.collector.dark button.primary:focus { outline-color: #382167; }
+.collector.dark button.accent:focus { outline-color: #503486; }
+.collector.dark entry, .collector.dark spinbutton, .collector.dark combobox button {
+    background-color: #1f222e;
+    color: @fc_dark_ink;
+    border-color: #62697f;
+    caret-color: #c6b3ff;
+}
+.collector.dark entry:focus, .collector.dark spinbutton:focus { border-color: #c6b3ff; }
+.collector.dark combobox button:hover { background-color: #363246; border-color: #ad99de; }
+.collector.dark combobox arrow, .collector.dark expander arrow { color: @fc_dark_muted; }
+.collector.dark entry placeholder { color: #a4acc2; }
+.collector.dark entry:disabled, .collector.dark spinbutton:disabled, .collector.dark combobox button:disabled {
+    background-color: #323542;
+    color: #a0a7bb;
+    border-color: #424756;
+}
+.collector.dark entry selection, .collector.dark textview text selection { background-color: #b5a1ff; color: #251847; }
+.collector.dark list, .collector.dark .origin-list { background-color: #1f222e; color: @fc_dark_ink; border-color: @fc_dark_line; }
+.collector.dark row { background-color: transparent; color: @fc_dark_ink; }
+.collector.dark row:hover { background-color: #383345; }
+.collector.dark row:selected { background-color: #4b3a73; color: #f2edff; }
+.collector.dark treeview { background-color: #282b38; color: @fc_dark_ink; }
+.collector.dark treeview:disabled { color: #a0a7bb; }
+.collector.dark treeview:hover { background-color: #333042; }
+.collector.dark treeview:selected { background-color: #4b3a73; color: #f2edff; }
+.collector.dark treeview header button { background-color: #303341; color: #bbc1d4; border-color: @fc_dark_line; }
+.collector.dark treeview header button:hover { background-color: #3b354d; color: #ddd3ff; }
+.collector.dark check, .collector.dark treeview check { background-color: #1f222e; border-color: #8991a9; }
+.collector.dark check:checked, .collector.dark check:indeterminate,
+.collector.dark treeview check:checked, .collector.dark treeview check:indeterminate {
+    background-color: #b5a1ff;
+    border-color: #b5a1ff;
+    color: #251847;
+}
+.collector.dark check:disabled, .collector.dark treeview check:disabled { background-color: #323542; border-color: #535b70; color: #a0a7bb; }
+.collector.dark expander title, .collector.dark expander title label { color: #cec3ef; }
+.collector.dark expander title:hover { color: #e1d7ff; }
+.collector.dark separator { background-color: @fc_dark_line; }
+.collector.dark popover, .collector.dark menu { background-color: #2e3140; color: @fc_dark_ink; border-color: #565d74; }
+.collector.dark menuitem { color: @fc_dark_ink; }
+.collector.dark menuitem:disabled { color: #a0a7bb; }
+.collector.dark menuitem:hover { background-color: #4b3a73; color: #f2edff; }
+.collector.dark progressbar trough { background-color: #3a354c; }
+.collector.dark progressbar progress { background-color: #b5a1ff; }
+.collector.dark scrollbar, .collector.dark scrollbar trough { background-color: #282b38; background-image: none; }
+.collector.dark .sidebar-scroll scrollbar, .collector.dark .sidebar-scroll scrollbar trough { background-color: #242733; }
+.collector.dark scrollbar slider { background-color: #858da6; background-image: none; }
+.collector.dark scrollbar slider:hover { background-color: #9b8dbb; }
+.collector.dark scrollbar slider:active { background-color: #b5a1ff; }
+.collector.dark scrolledwindow junction { background-color: #282b38; }
+.collector.dark .sidebar-scroll, .collector.dark .sidebar-scroll > viewport { background-color: #242733; }
+.collector.dark .sidebar-scroll undershoot.top { box-shadow: inset 0 2px alpha(#c6b3ff, 0.35); }
+.collector.dark .sidebar-scroll undershoot.bottom { box-shadow: inset 0 -2px alpha(#c6b3ff, 0.35); }
+.collector.dark scrolledwindow.dialog-surface { background-color: #1f222e; border-color: #535b70; }
+.collector.dark .dialog-surface > viewport, .collector.dark .dialog-surface list,
+.collector.dark textview, .collector.dark textview text { background-color: #1f222e; color: @fc_dark_ink; }
+.collector.dark textview:focus { outline-color: #c6b3ff; }
+.collector.dark label selection { background-color: #b5a1ff; color: #251847; }
+.collector.dark .dialog-action-area { border-color: @fc_dark_line; }
+
+tooltip { background-color: #302a43; color: #ffffff; border: 1px solid #615579; border-radius: 6px; box-shadow: none; }
+tooltip label { color: #ffffff; padding: 4px 6px; }
+.collector.dark .origin-list label { color: @fc_dark_ink; }
