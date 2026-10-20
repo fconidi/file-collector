@@ -33,7 +33,14 @@ Cancellation preserves completed moves and stops further work; the history can r
 
 ## Installation
 
-On Debian and compatible distributions:
+With the [SysLinuxOS Tools APT repository](https://github.com/fconidi/SysLinuxOS-Tools) configured:
+
+```sh
+sudo apt update
+sudo apt install file-collector
+```
+
+Or download the `.deb` from [GitHub Releases](https://github.com/fconidi/file-collector/releases) on Debian and compatible distributions:
 
 ```sh
 sudo apt install ./file-collector_0.2.0_all.deb
