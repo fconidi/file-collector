@@ -10,6 +10,7 @@ import os
 from pathlib import Path
 import shutil
 import sqlite3
+import stat
 import tempfile
 import threading
 import uuid
@@ -64,9 +65,30 @@ def _same(file):
     return File.read(file.path) == file
 
 
+def _open_regular(path):
+    """Open without blocking on FIFOs or following links; refuse anything but regular files."""
+    fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK | os.O_NOCTTY)
+    try:
+        if not stat.S_ISREG(os.fstat(fd).st_mode):
+            raise ValueError("Not a regular file")
+        return open(fd, "rb")
+    except BaseException:
+        os.close(fd)
+        raise
+
+
+def _db_path(path):
+    # Names may hold bytes that are not UTF-8; keep them exactly.
+    return os.fsencode(str(path))
+
+
+def _from_db(value):
+    return Path(os.fsdecode(value))
+
+
 def _digest(file, cancel):
     digest = hashlib.sha256()
-    with open(os.open(file.path, os.O_RDONLY | os.O_NOFOLLOW), "rb") as stream:
+    with _open_regular(file.path) as stream:
         info = os.fstat(stream.fileno())
         if (info.st_dev, info.st_ino, info.st_size, info.st_mtime_ns) != (
                 file.device, file.inode, file.size, file.mtime_ns):
@@ -93,7 +115,52 @@ def _rename_noreplace(source, target):
 
 
 def _rename(source, target):
-    _rename_noreplace(source, target)
+    try:
+        _rename_noreplace(source, target)
+    except OSError as error:
+        if error.errno not in (errno.ENOSYS, errno.EINVAL, errno.ENOTSUP):
+            raise
+        # FAT/exFAT and some network filesystems cannot refuse an overwrite atomically;
+        # the operation lock serializes this tool, so check first and rename plainly.
+        if os.path.lexists(target):
+            raise FileExistsError(errno.EEXIST, os.strerror(errno.EEXIST), str(target))
+        os.rename(source, target)
+
+
+def _publish(staging, target):
+    try:
+        _rename_noreplace(staging, target)
+    except OSError as error:
+        if error.errno not in (errno.ENOSYS, errno.EINVAL, errno.ENOTSUP):
+            raise
+        try:
+            os.link(staging, target, follow_symlinks=False)
+        except OSError as link_error:
+            if link_error.errno in (errno.EEXIST,):
+                raise
+            if os.path.lexists(target):
+                raise FileExistsError(errno.EEXIST, os.strerror(errno.EEXIST), str(target)) from None
+            os.rename(staging, target)
+        else:
+            staging.unlink()
+
+
+def _copy_metadata(source, staging):
+    """Keep times and permission bits, but never setuid/setgid; tolerate filesystems without them."""
+    info = os.lstat(source)
+    try:
+        shutil.copystat(source, staging, follow_symlinks=False)
+    except OSError:
+        try:
+            os.utime(staging, ns=(info.st_atime_ns, info.st_mtime_ns))
+        except OSError:
+            pass
+    try:
+        if os.geteuid() == 0:
+            os.chown(staging, info.st_uid, info.st_gid)
+        os.chmod(staging, stat.S_IMODE(info.st_mode) & 0o777)
+    except OSError:
+        pass
 
 
 def _sync_directory(directory):
@@ -114,7 +181,7 @@ def _copy_verified(file, target, digest, cancel):
     staging = Path(name)
     try:
         with os.fdopen(fd, "wb") as output:
-            with open(os.open(file.path, os.O_RDONLY | os.O_NOFOLLOW), "rb") as source:
+            with _open_regular(file.path) as source:
                 while chunk := source.read(1024 * 1024):
                     if cancel.is_set():
                         raise InterruptedError("Cancelled")
@@ -123,16 +190,10 @@ def _copy_verified(file, target, digest, cancel):
             os.fsync(output.fileno())
         if _digest(File.read(staging), cancel) != digest or not _same(file):
             raise ValueError("Copy verification failed; original preserved")
-        shutil.copystat(file.path, staging, follow_symlinks=False)
+        _copy_metadata(file.path, staging)
         if cancel.is_set():
             raise InterruptedError("Cancelled")
-        try:
-            _rename_noreplace(staging, target)
-        except OSError as error:
-            if error.errno not in (errno.ENOSYS, errno.EINVAL, errno.ENOTSUP):
-                raise
-            os.link(staging, target, follow_symlinks=False)
-            staging.unlink()
+        _publish(staging, target)
         _sync_directory(target.parent)
         if not _same(file):
             raise ValueError("Source changed; both files preserved")
@@ -160,11 +221,33 @@ def _move(file, target, digest, cancel):
         _sync_directory(file.path.parent)
 
 
+STAGING_PREFIX = ".file-collector-"
+
+
+def _remove_stale_staging(plan):
+    """Drop partial copies left by an earlier killed run; the operation lock excludes live ones."""
+    for directory in {item.target.parent for item in plan}:
+        try:
+            for entry in os.scandir(directory):
+                if entry.name.startswith(STAGING_PREFIX) and entry.is_file(follow_symlinks=False):
+                    try:
+                        os.unlink(entry.path)
+                    except OSError:
+                        pass
+        except OSError:
+            pass
+
+
+def _untouched(source, target):
+    return os.path.lexists(source) and not os.path.lexists(target)
+
+
 def collect(plan, journal=None, cancel=None, progress=None):
     journal = journal or default_journal()
     cancel = cancel or threading.Event()
     result = Outcome(run_id=uuid.uuid4().hex)
     with operation_lock(journal), database(journal) as connection:
+        _remove_stale_staging(plan)
         for index, item in enumerate(plan):
             if cancel.is_set():
                 result.cancelled = True
@@ -172,24 +255,35 @@ def collect(plan, journal=None, cancel=None, progress=None):
             if item.skip:
                 result.skipped += 1
             else:
+                ident = None
                 try:
                     digest = _digest(item.file, cancel)
                     cursor = connection.execute(
                         "INSERT INTO operations(run,source,target,digest,status) VALUES(?,?,?,?,?)",
-                        (result.run_id, str(item.file.path), str(item.target), digest, "pending"))
+                        (result.run_id, _db_path(item.file.path), _db_path(item.target), digest, "pending"))
+                    ident = cursor.lastrowid
                     connection.commit()
                     _move(item.file, item.target, digest, cancel)
-                    connection.execute("UPDATE operations SET status='done' WHERE id=?", (cursor.lastrowid,))
+                    connection.execute("UPDATE operations SET status='done' WHERE id=?", (ident,))
                     connection.commit()
                     result.moved += 1
                 except InterruptedError:
+                    _mark_failed(connection, ident, item)
                     result.cancelled = True
                     break
                 except (OSError, ValueError) as error:
+                    _mark_failed(connection, ident, item)
                     result.errors.append(f"{item.file.path}: {error}")
             if progress:
                 progress(index + 1, len(plan), item.file.path.name)
     return result
+
+
+def _mark_failed(connection, ident, item):
+    """A move that changed nothing is not a collection; keep 'pending' only for ambiguous states."""
+    if ident is not None and _untouched(item.file.path, item.target):
+        connection.execute("UPDATE operations SET status='failed' WHERE id=?", (ident,))
+        connection.commit()
 
 
 def history(journal=None):
@@ -214,13 +308,26 @@ def restore(run_id, journal=None, cancel=None, progress=None):
             if cancel.is_set():
                 result.cancelled = True
                 break
-            original, current = Path(source), Path(target)
+            original, current = _from_db(source), _from_db(target)
             try:
                 if status == "pending" and os.path.lexists(original) and not os.path.lexists(current):
                     connection.execute("UPDATE operations SET status='unchanged' WHERE id=?", (ident,))
                     connection.commit()
                     result.skipped += 1
+                    if progress:
+                        progress(index + 1, len(rows), current.name)
                     continue
+                if status == "pending" and os.path.lexists(original) and os.path.lexists(current):
+                    # A crash left both: if both still match the recorded content, drop the extra copy.
+                    if _digest(File.read(original), cancel) == digest and _digest(File.read(current), cancel) == digest:
+                        current.unlink()
+                        _sync_directory(current.parent)
+                        connection.execute("UPDATE operations SET status='restored' WHERE id=?", (ident,))
+                        connection.commit()
+                        result.moved += 1
+                        if progress:
+                            progress(index + 1, len(rows), current.name)
+                        continue
                 if os.path.lexists(original):
                     raise ValueError("Original path is occupied; no files changed")
                 file = File.read(current)

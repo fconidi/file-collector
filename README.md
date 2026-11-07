@@ -43,7 +43,7 @@ sudo apt install file-collector
 Or download the `.deb` from [GitHub Releases](https://github.com/fconidi/file-collector/releases) on Debian and compatible distributions:
 
 ```sh
-sudo apt install ./file-collector_0.2.0_all.deb
+sudo apt install ./file-collector_0.2.1_all.deb
 ```
 
 Open **File Collector** from the applications menu or run `file-collector`.

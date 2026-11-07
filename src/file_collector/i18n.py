@@ -6,7 +6,14 @@ LANGUAGES = {"en": "English", "it": "Italiano", "fr": "Français", "de": "Deutsc
 
 # English key followed by Italian, French, German, Spanish.
 CATALOG = {
-    "Gather scattered files into one folder": ("Riunisci i file sparsi in una sola cartella", "Rassemblez vos fichiers dans un seul dossier", "Verstreute Dateien in einem Ordner sammeln", "Reúne archivos dispersos en una carpeta"),
+    "Progress": ("Avanzamento", "Progression", "Fortschritt", "Progreso"),
+    "Search finished with errors": ("Ricerca terminata con errori", "Recherche terminée avec des erreurs", "Suche mit Fehlern beendet", "Búsqueda terminada con errores"),
+    "Some folders could not be read. Open Details for the reason.": ("Alcune cartelle non sono leggibili. Apri Dettagli per il motivo.", "Certains dossiers n'ont pas pu être lus. Ouvrez Détails pour la raison.", "Einige Ordner konnten nicht gelesen werden. Details zeigen den Grund.", "No se pudieron leer algunas carpetas. Abre Detalles para ver el motivo."),
+    "Select a file in the list first.": ("Seleziona prima un file nell'elenco.", "Sélectionnez d'abord un fichier dans la liste.", "Wählen Sie zuerst eine Datei in der Liste aus.", "Selecciona primero un archivo de la lista."),
+    "Collection failed": ("Raccolta non riuscita", "Collecte échouée", "Sammeln fehlgeschlagen", "Recolección fallida"),
+    "Restore failed": ("Ripristino non riuscito", "Restauration échouée", "Wiederherstellung fehlgeschlagen", "Restauración fallida"),
+    "Collection finished with errors": ("Raccolta terminata con errori", "Collecte terminée avec des erreurs", "Sammeln mit Fehlern beendet", "Recolección terminada con errores"),
+    "Restore finished with errors": ("Ripristino terminato con errori", "Restauration terminée avec des erreurs", "Wiederherstellung mit Fehlern beendet", "Restauración terminada con errores"),
     "Source folders": ("Cartelle di origine", "Dossiers sources", "Quellordner", "Carpetas de origen"),
     "Add folders": ("Aggiungi cartelle", "Ajouter des dossiers", "Ordner hinzufügen", "Añadir carpetas"),
     "Remove": ("Rimuovi", "Retirer", "Entfernen", "Quitar"),

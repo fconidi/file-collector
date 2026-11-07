@@ -35,22 +35,24 @@ def main():
         install(source / "packaging/file-collector", "usr/bin/file-collector", True)
         install(source / "packaging/org.syslinuxos.FileCollector.desktop", "usr/share/applications/org.syslinuxos.FileCollector.desktop")
         install(modules / "icon.svg", "usr/share/icons/hicolor/scalable/apps/org.syslinuxos.FileCollector.svg")
+        install(modules / "icon-round.svg", "usr/share/icons/hicolor/scalable/apps/org.syslinuxos.FileCollector-round.svg")
         for name in ("README.md", "CHANGELOG.md", "LICENSE"):
             install(source / name, f"usr/share/doc/file-collector/{name}")
-        install(modules / "icon.svg", "usr/share/doc/file-collector/src/file_collector/icon.svg")
+        install(source / "packaging/copyright", "usr/share/doc/file-collector/copyright")
         for size in ICON_SIZES:
-            artwork = modules / ("icon-small.svg" if size <= 32 else "icon.svg")
-            target = root / f"usr/share/icons/hicolor/{size}x{size}/apps/org.syslinuxos.FileCollector.png"
-            target.parent.mkdir(parents=True, exist_ok=True)
-            GdkPixbuf.Pixbuf.new_from_file_at_scale(str(artwork), size, size, True).savev(str(target), "png", [], [])
-            target.chmod(0o644)
+            for suffix in ("", "-round"):
+                artwork = modules / (("icon-small" if size <= 32 else "icon") + suffix + ".svg")
+                target = root / f"usr/share/icons/hicolor/{size}x{size}/apps/org.syslinuxos.FileCollector{suffix}.png"
+                target.parent.mkdir(parents=True, exist_ok=True)
+                GdkPixbuf.Pixbuf.new_from_file_at_scale(str(artwork), size, size, True).savev(str(target), "png", [], [])
+                target.chmod(0o644)
         control = root / "DEBIAN"
         control.mkdir()
         (control / "control").write_text(
             f"Package: file-collector\nVersion: {version}\nArchitecture: all\n"
             "Section: utils\nPriority: optional\n"
             "Maintainer: Franco Conidi <fconidi@gmail.com>\n"
-            "Depends: python3 (>= 3.10), python3-gi, gir1.2-gtk-3.0, librsvg2-common\n"
+            "Depends: python3 (>= 3.10), python3-gi, gir1.2-gtk-3.0, gir1.2-gdkpixbuf-2.0, librsvg2-common\n"
             "Description: Gather files from subfolders into one destination\n"
             " Native desktop application with recursive search, collection previews,\n"
             " non-overwriting moves and assisted restore.\n")

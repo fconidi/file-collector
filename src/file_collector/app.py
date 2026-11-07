@@ -1,6 +1,8 @@
 """Native GTK desktop application."""
 
 from pathlib import Path
+import os
+import re
 import threading
 
 import gi
@@ -26,6 +28,13 @@ def human_size(value):
         value /= 1024
 
 
+def safe(text):
+    """Printable text for widgets: undecodable bytes and control characters cannot break GTK."""
+    text = os.fsdecode(text) if isinstance(text, (bytes, os.PathLike)) else str(text)
+    text = re.sub(r"[\x00-\x1f\x7f]", lambda match: f"\\x{ord(match.group()):02x}", text)
+    return text.encode("utf-8", "replace").decode("utf-8")
+
+
 def styled(widget, name):
     widget.get_style_context().add_class(name)
     return widget
@@ -46,6 +55,8 @@ class Window(Gtk.ApplicationWindow):
         self.searched = False
         self.busy = False
         self.last_errors = []
+        self.close_pending = False
+        self.refresh_queued = False
         self.cancel = threading.Event()
         self.values = {}
         self.connect("delete-event", self.on_close)
@@ -119,17 +130,20 @@ class Window(Gtk.ApplicationWindow):
         for widget in (self.history_button, settings):
             header.pack_start(widget, False, False, 0)
             self.controls.append(widget)
+        self.controls.extend((self.language_combo, self.theme))
         self.outer.pack_start(header, False, False, 0)
         body = Gtk.Box()
         self.outer.pack_start(body, True, True, 0)
+        sidebar_column = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        sidebar_column.set_size_request(286, -1)
         sidebar_scroll = styled(Gtk.ScrolledWindow(), "sidebar-scroll")
         sidebar_scroll.set_overlay_scrolling(False)
         sidebar_scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
-        sidebar_scroll.set_size_request(286, -1)
         self.sidebar = styled(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12), "sidebar")
         sidebar_scroll.add(self.sidebar)
         self.controls.append(self.sidebar)
-        body.pack_start(sidebar_scroll, False, False, 0)
+        sidebar_column.pack_start(sidebar_scroll, True, True, 0)
+        body.pack_start(sidebar_column, False, False, 0)
         self.sidebar.pack_start(self.label("Source folders", "section-title"), False, False, 0)
         source_scroll = Gtk.ScrolledWindow()
         source_scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
@@ -149,11 +163,14 @@ class Window(Gtk.ApplicationWindow):
         for name in ("All files", "Comics", "Documents", "Images", "Audio", "Custom"):
             self.presets.append_text(self.tr(name))
         self.presets.set_active(self.values.get("preset", 0))
+        self.presets.get_accessible().set_name(self.tr("File types"))
         self.presets.connect("changed", self.apply_preset)
         self.sidebar.pack_start(self.presets, False, False, 0)
         self.field(self.sidebar, "extensions", "Extensions, separated by commas", "pdf,cbr,cbz")
         self.field(self.sidebar, "name", "Name contains", "Optional text")
         advanced = Gtk.Expander(label=self.tr("Advanced filters"))
+        advanced.set_expanded(self.values.get("advanced", False))
+        self.advanced = advanced
         fields = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
         fields.set_margin_top(10)
         for key, label, placeholder in (
@@ -171,8 +188,12 @@ class Window(Gtk.ApplicationWindow):
         fields.pack_start(self.hidden, False, False, 0)
         advanced.add(fields)
         self.sidebar.pack_start(advanced, False, False, 0)
+        # Pinned below the scrolled filters so it never leaves the window.
+        search_bar = styled(Gtk.Box(), "sidebar")
         self.search_button = self.button("Search files", self.start_search, "primary")
-        self.sidebar.pack_start(self.search_button, False, False, 4)
+        search_bar.pack_start(self.search_button, True, True, 0)
+        sidebar_column.pack_start(search_bar, False, False, 0)
+        self.controls.append(search_bar)
 
         workspace = styled(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12), "workspace")
         body.pack_start(workspace, True, True, 0)
@@ -204,6 +225,7 @@ class Window(Gtk.ApplicationWindow):
         self.tree.set_enable_search(True)
         self.tree.set_search_column(1)
         self.tree.set_tooltip_column(2)
+        self.tree.get_accessible().set_name(self.tr("Results"))
         toggle = Gtk.CellRendererToggle()
         toggle.connect("toggled", self.toggle_file)
         self.tree.append_column(Gtk.TreeViewColumn("", toggle, active=0))
@@ -251,6 +273,7 @@ class Window(Gtk.ApplicationWindow):
         self.policy.append("rename", self.tr("Keep both (add suffix)"))
         self.policy.append("skip", self.tr("Skip existing names"))
         self.policy.set_active_id(self.values.get("policy", "rename"))
+        self.policy.get_accessible().set_name(self.tr("Name conflicts"))
         self.policy.connect("changed", lambda *_: self.refresh_selection())
         policy_box.pack_start(self.policy, False, False, 0)
         destination.pack_start(policy_box, False, False, 0)
@@ -259,6 +282,7 @@ class Window(Gtk.ApplicationWindow):
         destination.pack_start(self.move_button, False, False, 0)
         self.outer.pack_start(destination, False, False, 0)
         self.progress = Gtk.ProgressBar()
+        self.progress.get_accessible().set_name(self.tr("Progress"))
         self.outer.pack_start(self.progress, False, False, 0)
         status = styled(Gtk.Box(spacing=10), "statusbar")
         self.status = self.label("Ready", "muted")
@@ -286,6 +310,7 @@ class Window(Gtk.ApplicationWindow):
         entry.get_accessible().set_name(self.tr(label))
         caption.set_mnemonic_widget(entry)
         entry.connect("changed", self.invalidate)
+        entry.connect("activate", lambda *_: self.start_search() if self.sources and not self.busy else None)
         box.pack_start(caption, False, False, 0)
         box.pack_start(entry, False, False, 0)
         self.entries[key] = entry
@@ -295,7 +320,9 @@ class Window(Gtk.ApplicationWindow):
         if self.building or self.busy:
             return
         self.values = {key: entry.get_text() for key, entry in self.entries.items()}
-        self.values.update(preset=self.presets.get_active(), hidden=self.hidden.get_active(), policy=self.policy.get_active_id())
+        self.values.update(preset=self.presets.get_active(), hidden=self.hidden.get_active(), policy=self.policy.get_active_id(),
+                           advanced=self.advanced.get_expanded())
+        status_text = self.status.get_text()
         selected = {file.path for file in self.selected_files()}
         self.language = combo.get_active_id()
         self.outer.destroy()
@@ -303,6 +330,8 @@ class Window(Gtk.ApplicationWindow):
         for row in self.model:
             row[0] = self.files[row[5]].path in selected
         self.refresh_selection()
+        if self.files or self.searched:
+            self.status.set_text(status_text)
 
     def change_theme(self, *_):
         self.dark = self.theme.get_active_id() == "dark"
@@ -326,16 +355,16 @@ class Window(Gtk.ApplicationWindow):
         for row in self.source_list.get_children():
             row.destroy()
         for path in self.sources:
-            label = Gtk.Label(label=path.name or str(path), xalign=0)
+            label = Gtk.Label(label=safe(path.name or str(path)), xalign=0)
             label.set_ellipsize(Pango.EllipsizeMode.MIDDLE)
-            label.set_tooltip_text(str(path))
+            label.set_tooltip_text(safe(path))
             self.source_list.add(label)
         self.source_list.show_all()
         self.remove_button.set_sensitive(bool(self.sources))
         self.search_button.set_sensitive(bool(self.sources))
         if self.destination:
-            self.destination_label.set_text(str(self.destination))
-            self.destination_label.set_tooltip_text(str(self.destination))
+            self.destination_label.set_text(safe(self.destination))
+            self.destination_label.set_tooltip_text(safe(self.destination))
 
     def chooser(self, title, multiple, callback):
         chooser = Gtk.FileChooserNative.new(self.tr(title), self, Gtk.FileChooserAction.SELECT_FOLDER, self.tr("Choose"), self.tr("Cancel"))
@@ -399,6 +428,9 @@ class Window(Gtk.ApplicationWindow):
         self.set_busy(True, message)
         def finish(result, error):
             self.set_busy(False)
+            if self.close_pending:
+                self.destroy()
+                return False
             if error:
                 self.last_errors = [str(error)]
                 self.status.set_text(self.tr("Operation failed"))
@@ -431,13 +463,18 @@ class Window(Gtk.ApplicationWindow):
         self.searched = not result.cancelled
         self.populate()
         self.progress.set_fraction(0 if result.cancelled else 1)
-        self.status.set_text(self.tr("Search cancelled; results are partial" if result.cancelled else "Search complete"))
+        failed = bool(self.last_errors) and not self.files and not result.cancelled
+        self.status.set_text(self.tr("Search cancelled; results are partial" if result.cancelled else
+                                     "Search finished with errors" if failed else "Search complete"))
+        if failed:
+            self.empty_title.set_text(self.tr("Search finished with errors"))
+            self.empty_text.set_text(self.tr("Some folders could not be read. Open Details for the reason."))
         self.details_button.set_visible(bool(self.last_errors))
 
     def populate(self):
         self.model.clear()
         for index, file in enumerate(self.files):
-            self.model.append([True, file.path.name, str(file.path.parent), human_size(file.size), "", index])
+            self.model.append([True, safe(file.path.name), safe(file.path.parent), human_size(file.size), "", index])
         self.stack.set_visible_child_name("files" if self.files else "empty")
         none_found = self.searched and not self.files
         self.empty_title.set_text(self.tr("No matching files" if none_found else "Your files, together"))
@@ -458,7 +495,7 @@ class Window(Gtk.ApplicationWindow):
         if self.destination:
             try:
                 plan = make_plan(files, self.destination, self.policy.get_active_id())
-                names = {item.file.path: self.tr("Skip") if item.skip else item.target.name for item in plan}
+                names = {item.file.path: self.tr("Skip") if item.skip else safe(item.target.name) for item in plan}
             except (ValueError, OSError):
                 self.move_button.set_sensitive(False)
         for row in self.model:
@@ -466,7 +503,18 @@ class Window(Gtk.ApplicationWindow):
 
     def toggle_file(self, _, path):
         self.model[path][0] = not self.model[path][0]
-        self.refresh_selection()
+        self.queue_refresh()
+
+    def queue_refresh(self):
+        # Coalesce rapid clicks: the plan reads the destination folder each time.
+        if self.refresh_queued:
+            return
+        self.refresh_queued = True
+        def run():
+            self.refresh_queued = False
+            self.refresh_selection()
+            return False
+        GLib.timeout_add(120, run)
 
     def select_all(self, selected):
         for row in self.model:
@@ -475,7 +523,9 @@ class Window(Gtk.ApplicationWindow):
 
     def open_source(self):
         model, iterator = self.tree.get_selection().get_selected()
-        if iterator is not None:
+        if iterator is None:
+            self.status.set_text(self.tr("Select a file in the list first."))
+        else:
             try:
                 Gio.AppInfo.launch_default_for_uri(self.files[model[iterator][5]].path.parent.as_uri(), None)
             except GLib.Error as error:
@@ -497,9 +547,9 @@ class Window(Gtk.ApplicationWindow):
         box = dialog.get_content_area()
         box.set_spacing(12)
         box.set_border_width(18)
-        box.pack_start(Gtk.Label(label=str(self.destination), xalign=0, selectable=True, wrap=True), False, False, 0)
+        box.pack_start(Gtk.Label(label=safe(self.destination), xalign=0, selectable=True, wrap=True), False, False, 0)
         box.pack_start(Gtk.Label(label=self.tr("{move} to move · {skip} to skip · {rename} renamed", move=sum(not p.skip for p in plan), skip=sum(p.skip for p in plan), rename=sum(p.renamed for p in plan)), xalign=0), False, False, 0)
-        text = "\n".join(f"{item.file.path}\n    → {self.tr('Skip') if item.skip else item.target.name}\n" for item in plan)
+        text = "\n".join(f"{safe(item.file.path)}\n    → {self.tr('Skip') if item.skip else safe(item.target.name)}\n" for item in plan)
         box.pack_start(self.text_view(text), True, True, 0)
         box.pack_start(Gtk.Label(label=self.tr("Original archives and unselected files stay where they are."), xalign=0, wrap=True), False, False, 0)
         dialog.show_all()
@@ -520,7 +570,14 @@ class Window(Gtk.ApplicationWindow):
         self.searched = False
         self.populate()
         self.last_errors = result.errors
-        title = "Operation cancelled" if result.cancelled else ("Restore complete" if restoring else "Collection complete")
+        if result.cancelled:
+            title = "Operation cancelled"
+        elif result.errors and not result.moved:
+            title = "Restore failed" if restoring else "Collection failed"
+        elif result.errors:
+            title = "Restore finished with errors" if restoring else "Collection finished with errors"
+        else:
+            title = "Restore complete" if restoring else "Collection complete"
         summary = self.tr("Moved: {moved}    Skipped: {skipped}    Errors: {errors}", moved=result.moved, skipped=result.skipped, errors=len(result.errors))
         self.status.set_text(summary)
         self.progress.set_fraction(0 if result.cancelled else 1)
@@ -533,6 +590,8 @@ class Window(Gtk.ApplicationWindow):
 
     def on_close(self, *_):
         if self.busy:
+            # Close by itself once the running operation has stopped cleanly.
+            self.close_pending = True
             self.request_cancel()
             return True
         return False
@@ -591,7 +650,7 @@ class Window(Gtk.ApplicationWindow):
         dialog = self.themed(Gtk.Dialog(title=self.tr("Details"), transient_for=self, modal=True))
         dialog.set_default_size(760, 420)
         dialog.add_button(self.tr("Close"), Gtk.ResponseType.CLOSE)
-        dialog.get_content_area().pack_start(self.text_view("\n\n".join(self.last_errors)), True, True, 0)
+        dialog.get_content_area().pack_start(self.text_view("\n\n".join(safe(error) for error in self.last_errors)), True, True, 0)
         dialog.show_all()
         dialog.run()
         dialog.destroy()

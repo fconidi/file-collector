@@ -116,7 +116,7 @@
     caret-color: @fc_indigo;
     border-image: none;
     text-shadow: none;
-    border: 1px solid #bec3d1;
+    border: 1px solid #858ba0;
     border-radius: 6px;
     min-height: 20px;
     padding: 8px 10px;
@@ -344,7 +344,7 @@ messagedialog.collector .title { font-size: 14pt; font-weight: 700; }
 .collector.dark entry, .collector.dark spinbutton, .collector.dark combobox button {
     background-color: #1f222e;
     color: @fc_dark_ink;
-    border-color: #62697f;
+    border-color: #848ba0;
     caret-color: #c6b3ff;
 }
 .collector.dark entry:focus, .collector.dark spinbutton:focus { border-color: #c6b3ff; }

@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <defs>
+    <linearGradient id="tile" x1="24" y1="12" x2="220" y2="244" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#7156df"/>
+      <stop offset=".54" stop-color="#4e38c4"/>
+      <stop offset="1" stop-color="#39269c"/>
+    </linearGradient>
+    <linearGradient id="folder" x1="128" y1="181" x2="128" y2="220" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ffd679"/>
+      <stop offset="1" stop-color="#ffc857"/>
+    </linearGradient>
+  </defs>
+  <circle cx="128" cy="128" r="116" fill="url(#tile)"/>
+  <g fill="none" stroke="#fff" stroke-width="10" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M56 54H90Q128 54 128 92V143"/>
+    <path d="M200 54H166Q128 54 128 92"/>
+    <path d="M56 90H90Q128 90 128 124"/>
+    <path d="M200 90H166Q128 90 128 124"/>
+    <path d="M56 126H94Q116 126 128 143"/>
+    <path d="M200 126H162Q140 126 128 143"/>
+    <path d="M112 142L128 158L144 142"/>
+  </g>
+  <g fill="#fff">
+    <circle cx="56" cy="54" r="9"/><circle cx="56" cy="90" r="9"/><circle cx="56" cy="126" r="9"/>
+    <circle cx="200" cy="54" r="9"/><circle cx="200" cy="90" r="9"/><circle cx="200" cy="126" r="9"/>
+  </g>
+  <path d="M74 178Q74 166 86 166H109L121 177H170Q182 177 182 189V209Q182 222 169 222H87Q74 222 74 209Z" fill="#dfa235"/>
+  <path d="M78 182H178Q187 182 185 192L181 210Q179 220 168 220H88Q77 220 75 210L71 192Q69 182 78 182Z" fill="url(#folder)"/>
+</svg>

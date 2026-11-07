@@ -57,6 +57,36 @@ class SearchResult:
     cancelled: bool = False
 
 
+NAME_MAX = 255
+
+
+def split_name(name):
+    """Split a file name into stem and extension, keeping compound ones like .tar.gz."""
+    path = Path(name)
+    suffix = path.suffix
+    stem = name[:len(name) - len(suffix)] if suffix else name
+    if suffix and stem.casefold().endswith(".tar"):
+        suffix = stem[-4:] + suffix
+        stem = stem[:-4]
+    return stem, suffix
+
+
+def collision_name(name, number):
+    """Build stem_NNN.ext within the file name limit, cutting the stem on a character boundary."""
+    stem, suffix = split_name(name)
+    tail = f"_{number:03}{suffix}"
+    budget = NAME_MAX - len(tail.encode("utf-8", "surrogateescape"))
+    encoded = stem.encode("utf-8", "surrogateescape")
+    if len(encoded) > budget:
+        stem = encoded[:max(budget, 1)].decode("utf-8", "ignore") or "_"
+    return stem + tail
+
+
+def _matches_extension(name, extensions):
+    lowered = name.casefold()
+    return any(lowered.endswith("." + ext) for ext in extensions)
+
+
 def _parts(value):
     return [part for part in re.split(r"[,;\s]+", value.casefold()) if part]
 
@@ -67,7 +97,7 @@ def scan(roots, filters, destination=None, cancel=None):
     result = SearchResult()
     visited = {}
     destination = Path(destination).resolve() if destination else None
-    extensions = {ext.lstrip("*.") for ext in _parts(filters.extensions)}
+    extensions = {ext.lstrip("*.") for ext in _parts(filters.extensions)} - {""}
     excluded = _parts(filters.excluded)
     after = datetime.combine(date.fromisoformat(filters.after), time()).timestamp() if filters.after else None
     before = datetime.combine(date.fromisoformat(filters.before) + timedelta(days=1), time()).timestamp() if filters.before else None
@@ -81,6 +111,8 @@ def scan(roots, filters, destination=None, cancel=None):
     while stack and not cancel.is_set():
         directory, depth = stack.pop()
         if directory == destination or (destination and destination in directory.parents):
+            if depth == 0 and directory == destination:
+                result.errors.append(f"{directory}: this is the destination folder; choose a different source")
             continue
         if directory in visited and visited[directory] <= depth:
             continue
@@ -103,7 +135,7 @@ def scan(roots, filters, destination=None, cancel=None):
                             continue
                         if not entry.is_file(follow_symlinks=False):
                             continue
-                        if extensions and path.suffix.lstrip(".").casefold() not in extensions:
+                        if extensions and not _matches_extension(entry.name, extensions):
                             continue
                         if filters.name.casefold() not in entry.name.casefold():
                             continue
@@ -151,7 +183,7 @@ def make_plan(files, destination, conflicts="rename"):
             continue
         number = 1
         while target.name.casefold() in occupied:
-            target = destination / f"{file.path.stem}_{number:03}{file.path.suffix}"
+            target = destination / collision_name(file.path.name, number)
             number += 1
         occupied.add(target.name.casefold())
         plan.append(PlanItem(file, target, renamed=conflict))
